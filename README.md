@@ -1,2 +1,2 @@
 # python-efi-wrapper
-A wrapper compiler for a lightweight .efi python environment
+A wrapper compiler for a lightweight .efi python environment in UEFI services
