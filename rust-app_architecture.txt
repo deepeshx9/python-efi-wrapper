@@ -1,0 +1,30 @@
+[ User Input: script.py ] + [ Optional: --cmdline "custom args" ]
+             │
+ ┌───────────▼─────────────────────────────────────────────────────┐
+ │                   Rust CLI Application (The Wrapper)            │
+ │                                                                 │
+ │  ┌─────────────────┐       ┌─────────────────────────────────┐  │
+ │  │ 1. CLI Parser   │       │ 2. Asset Vault (Embedded)       │  │
+ │  │ (Crate: clap)   │       │ - bzImage (x86_64 Kernel)       │  │
+ │  │ Parses flags &  │       │ - micropython (Static Binary)   │  │
+ │  │ input file paths│       │ - systemd-boot (.stub)          │  │
+ │  └───────┬─────────┘       │ - busybox                       │  │
+ │          │                 └───────────────┬─────────────────┘  │
+ │          │                                 │                    │
+ │  ┌───────▼─────────────────────────────────▼─────────────────┐  │
+ │  │ 3. Initramfs Generator (Crate: cpio / flate2)             │  │
+ │  │ - Generates /init mount script                            │  │
+ │  │ - Injects embedded busybox & micropython                  │  │
+ │  │ - Injects user's script.py as /main.py                    │  │
+ │  │ - Compresses to initramfs.cpio.gz                         │  │
+ │  └───────┬───────────────────────────────────────────────────┘  │
+ │          │                                                      │
+ │  ┌───────▼───────────────────────────────────────────────────┐  │
+ │  │ 4. Linker / Fuser (Crate: goblin OR std::process::Command)│  │
+ │  │ - Reads Stub PE Header to find 'Image Base'               │  │
+ │  │ - Calculates absolute memory offsets for payload sections │  │
+ │  │ - Appends .cmdline, .linux, and .initrd to the PE binary  │  │
+ │  └───────┬───────────────────────────────────────────────────┘  │
+ └──────────┼──────────────────────────────────────────────────────┘
+            │
+    [ Output: custom_app.efi ]
