@@ -18,8 +18,10 @@ At present, development is being performed through internal testbed scripts and 
 
 ## Goals
 
-* Build EFI applications directly from Python source code.
+* Build bootable EFI applications directly from Python source code.
 * Additional `--keep-services` flag avoids ExitBootServices() execution. (Uses Intel's EDK II CPython port)
+* Experimental `--minimal-native` flag aims for smallest possible footprint. (May break functionality; Uses Nuitka)
+* GUI support coming soon in Normal mode (not available if `--keep-services` or `--minimal-native` flags are used)
 * Support both MicroPython and CPython workloads where practical. (highly experimental right now)
 * Generate self-contained bootable EFI applications. (static mode)
 * Create bootable USB media automatically. (requires additional flags)
@@ -35,7 +37,7 @@ Example future workflows:
 pytoefi hello.py
 ```
 
-Build a basic EFI application.
+Build a basic EFI application using defaults.
 
 ```bash
 pytoefi --build-static hello.py
@@ -65,9 +67,17 @@ pytoefi --build-static hello.py \
 
 Build a self-contained EFI application with bundled runtime components and avoid execution of ExitBootServices().
 
+```bash
+pytoefi --build-static hello.py \
+         --bootable-media:E: \
+         --minimal-native
+```
+
+Build a native EFI application using Nuitka.
+
 ## Machine Profiles
 
-Machine profiles are based on Linux kernel configuration files. (not usable if `--keep-services` flag is used) 
+Machine profiles are based on Linux kernel configuration files. (not usable if `--keep-services` or `--minimal-native` flag is used) 
 
 These profiles influence driver selection, compatibility targets, and generated boot environments.
 
