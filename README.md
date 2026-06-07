@@ -19,6 +19,7 @@ At present, development is being performed through internal testbed scripts and 
 ## Goals
 
 * Build EFI applications directly from Python source code.
+* Additional `--keep-services` flag avoids ExitBootServices() execution. (Uses Intel's EDK II CPython port)
 * Support both MicroPython and CPython workloads where practical. (highly experimental right now)
 * Generate self-contained bootable EFI applications. (static mode)
 * Create bootable USB media automatically. (requires additional flags)
@@ -55,6 +56,15 @@ pytoefi --build-static hello.py \
 ```
 
 Build using a specific Linux kernel configuration profile.
+
+```bash
+pytoefi --build-static hello.py \
+         --bootable-media:E: \
+         --target-machine=./configs/oldpc.config \
+         --keep-services
+```
+
+Build using a specific Linux kernel configuration profile and avoid execution of ExitBootServices().
 
 ## Machine Profiles
 
