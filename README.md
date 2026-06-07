@@ -34,70 +34,77 @@ At present, development is being performed through internal testbed scripts and 
 * Support machine-specific builds using Linux kernel configuration profiles.
 * Minimize the amount of firmware and bootloader knowledge required from end users.
 
-## .efi arcgitecture in Normal Mode
-┌───────────────────────────────────────────────────────────────┐
- │               custom_app.efi (PE32+ Executable)               │
- ├───────────────────────────────────────────────────────────────┤
- │ [ PE/COFF Headers ]                                           │
- │ - Magic Number (MZ)                                           │
- │ - Section Table (Map pointing to all the sections below)      │
- │ - Image Base (e.g., 0x100000000)                              │
- ├───────────────────────────────────────────────────────────────┤
- │ [ .text & .data ] (The Boot Stub)                             │
- │ - The original systemd-boot code.                             │
- │ - This is the ONLY part UEFI firmware natively understands.   │
- │ - It executes, allocates memory, and unpacks the kernel.      │
- ├───────────────────────────────────────────────────────────────┤
- │ [ .osrel ]                                                    │
- │ - Dummy data (/dev/null) to satisfy systemd-boot requirements.│
- ├───────────────────────────────────────────────────────────────┤
- │ [ .cmdline ]                                                  │
- │ - ASCII text file containing: "console=ttyS0 quiet"           │
- │ - The Rust app can let users inject custom kernel flags here.│
- ├───────────────────────────────────────────────────────────────┤
- │ [ .linux ]                                                    │
- │ - The raw bzImage (x86_64 Minimal Linux Kernel).              │
- ├───────────────────────────────────────────────────────────────┤
- │ [ .initrd ] (The RAM Filesystem)                              │
- │ - Compressed cpio.gz archive containing the user-space:       │
- │    ├── /init          (The launch script, runs as PID 1)      │
- │    ├── /bin/busybox   (Provides basic 'mount' commands)       │
- │    ├── /bin/python    (A static MicroPython binary)           │
- │    └── /main.py       (The script injected by the Rust tool)  │
- └───────────────────────────────────────────────────────────────┘
+## .efi Architecture in Normal Mode
 
-## Rust-CLI imagined architecture for Normal Mode
+```text
+┌───────────────────────────────────────────────────────────────┐
+│               custom_app.efi (PE32+ Executable)              │
+├───────────────────────────────────────────────────────────────┤
+│ [ PE/COFF Headers ]                                          │
+│ - Magic Number (MZ)                                          │
+│ - Section Table (Map pointing to all the sections below)     │
+│ - Image Base (e.g., 0x100000000)                             │
+├───────────────────────────────────────────────────────────────┤
+│ [ .text & .data ] (The Boot Stub)                            │
+│ - The original systemd-boot code.                            │
+│ - This is the ONLY part UEFI firmware natively understands.  │
+│ - It executes, allocates memory, and unpacks the kernel.     │
+├───────────────────────────────────────────────────────────────┤
+│ [ .osrel ]                                                   │
+│ - Dummy data (/dev/null) to satisfy systemd-boot requirements│
+├───────────────────────────────────────────────────────────────┤
+│ [ .cmdline ]                                                 │
+│ - ASCII text file containing: "console=ttyS0 quiet"          │
+│ - The Rust app can let users inject custom kernel flags here │
+├───────────────────────────────────────────────────────────────┤
+│ [ .linux ]                                                   │
+│ - The raw bzImage (x86_64 Minimal Linux Kernel)              │
+├───────────────────────────────────────────────────────────────┤
+│ [ .initrd ] (The RAM Filesystem)                             │
+│ - Compressed cpio.gz archive containing the user-space:      │
+│    ├── /init          (The launch script, runs as PID 1)     │
+│    ├── /bin/busybox   (Provides basic 'mount' commands)      │
+│    ├── /bin/python    (A static MicroPython binary)          │
+│    └── /main.py       (The script injected by the Rust tool) │
+└───────────────────────────────────────────────────────────────┘
+```
+
+## Rust-CLI Imagined Architecture for Normal Mode
+
+```text
 [ User Input: script.py ] + [ Optional: --cmdline "custom args" ]
              │
- ┌───────────▼─────────────────────────────────────────────────────┐
- │                   Rust CLI Application (The Wrapper)            │
- │                                                                 │
- │  ┌─────────────────┐       ┌─────────────────────────────────┐  │
- │  │ 1. CLI Parser   │       │ 2. Asset Vault (Embedded)       │  │
- │  │ (Crate: clap)   │       │ - bzImage (x86_64 Kernel)       │  │
- │  │ Parses flags &  │       │ - micropython (Static Binary)   │  │
- │  │ input file paths│       │ - systemd-boot (.stub)          │  │
- │  └───────┬─────────┘       │ - busybox                       │  │
- │          │                 └───────────────┬─────────────────┘  │
- │          │                                 │                    │
- │  ┌───────▼─────────────────────────────────▼─────────────────┐  │
- │  │ 3. Initramfs Generator (Crate: cpio / flate2)             │  │
- │  │ - Generates /init mount script                            │  │
- │  │ - Injects embedded busybox & micropython                  │  │
- │  │ - Injects user's script.py as /main.py                    │  │
- │  │ - Compresses to initramfs.cpio.gz                         │  │
- │  └───────┬───────────────────────────────────────────────────┘  │
- │          │                                                      │
- │  ┌───────▼───────────────────────────────────────────────────┐  │
- │  │ 4. Linker / Fuser (Crate: goblin OR std::process::Command)│  │
- │  │ - Reads Stub PE Header to find 'Image Base'               │  │
- │  │ - Calculates absolute memory offsets for payload sections │  │
- │  │ - Appends .cmdline, .linux, and .initrd to the PE binary  │  │
- │  └───────┬───────────────────────────────────────────────────┘  │
- └──────────┼──────────────────────────────────────────────────────┘
-            │
-    [ Output: custom_app.efi ]
-
+┌────────────▼────────────────────────────────────────────────────┐
+│                Rust CLI Application (The Wrapper)             │
+│                                                                │
+│  ┌─────────────────┐      ┌─────────────────────────────────┐ │
+│  │ 1. CLI Parser   │      │ 2. Asset Vault (Embedded)       │ │
+│  │ (Crate: clap)   │      │ - bzImage (x86_64 Kernel)       │ │
+│  │ Parses flags &  │      │ - MicroPython (Static Binary)   │ │
+│  │ input file paths│      │ - systemd-boot (.stub)          │ │
+│  └───────┬─────────┘      │ - busybox                       │ │
+│          │                └───────────────┬─────────────────┘ │
+│          │                                │                   │
+│  ┌───────▼────────────────────────────────▼─────────────────┐ │
+│  │ 3. Initramfs Generator (Crate: cpio / flate2)            │ │
+│  │ - Generates /init mount script                           │ │
+│  │ - Injects embedded busybox & MicroPython                 │ │
+│  │ - Injects user's script.py as /main.py                   │ │
+│  │ - Compresses to initramfs.cpio.gz                        │ │
+│  └───────┬──────────────────────────────────────────────────┘ │
+│          │                                                    │
+│  ┌───────▼──────────────────────────────────────────────────┐ │
+│  │ 4. Linker / Fuser                                        │ │
+│  │    (Crate: goblin OR std::process::Command)              │ │
+│  │ - Reads Stub PE Header to find 'Image Base'              │ │
+│  │ - Calculates absolute memory offsets for payloads        │ │
+│  │ - Appends .cmdline, .linux, and .initrd sections         │ │
+│  └───────┬──────────────────────────────────────────────────┘ │
+└──────────┼────────────────────────────────────────────────────┘
+           │
+           ▼
+   [ Output: custom_app.efi ]
+```
 ## Intended Usage
 
 Example future workflows:
