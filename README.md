@@ -16,6 +16,11 @@ The command-line interface shown throughout this document does **not** exist yet
 
 At present, development is being performed through internal testbed scripts and automated build pipelines.
 
+<img width="2943" height="1839" alt="Screenshot 2026-06-06 225410" src="https://github.com/user-attachments/assets/ed0637eb-97d7-48fd-a29b-e15873e550f4" />
+<img width="2330" height="1223" alt="Screenshot 2026-06-06 220937" src="https://github.com/user-attachments/assets/89ccfb97-b021-4e2f-a74d-f66513e4d2f1" />
+<img width="2943" height="1839" alt="Screenshot 2026-06-06 225424" src="https://github.com/user-attachments/assets/1ac40c6d-a241-46f8-816e-1dc761bfc389" />
+
+
 ## Goals
 
 * Build bootable EFI applications directly from Python source code.
