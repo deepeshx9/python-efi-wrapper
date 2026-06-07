@@ -60,15 +60,14 @@ Build using a specific Linux kernel configuration profile.
 ```bash
 pytoefi --build-static hello.py \
          --bootable-media:E: \
-         --target-machine=./configs/oldpc.config \
          --keep-services
 ```
 
-Build using a specific Linux kernel configuration profile and avoid execution of ExitBootServices().
+Build a self-contained EFI application with bundled runtime components and avoid execution of ExitBootServices().
 
 ## Machine Profiles
 
-Machine profiles are based on Linux kernel configuration files.
+Machine profiles are based on Linux kernel configuration files. (not usable if `--keep-services` flag is used) 
 
 These profiles influence driver selection, compatibility targets, and generated boot environments.
 
