@@ -16,15 +16,15 @@
  ├───────────────────────────────────────────────────────────────┤
  │ [ .cmdline ]                                                  │
  │ - ASCII text file containing: "console=ttyS0 quiet"           │
- │ - Your Rust app can let users inject custom kernel flags here.│
+ │ - The Rust app can let users inject custom kernel flags here.│
  ├───────────────────────────────────────────────────────────────┤
  │ [ .linux ]                                                    │
  │ - The raw bzImage (x86_64 Minimal Linux Kernel).              │
  ├───────────────────────────────────────────────────────────────┤
  │ [ .initrd ] (The RAM Filesystem)                              │
- │ - Compressed cpio.gz archive containing your user-space:      │
+ │ - Compressed cpio.gz archive containing the user-space:       │
  │    ├── /init          (The launch script, runs as PID 1)      │
  │    ├── /bin/busybox   (Provides basic 'mount' commands)       │
- │    ├── /bin/python    (Your static MicroPython binary)        │
- │    └── /main.py       (The script injected by your Rust tool) │
+ │    ├── /bin/python    (A static MicroPython binary)           │
+ │    └── /main.py       (The script injected by the Rust tool)  │
  └───────────────────────────────────────────────────────────────┘
